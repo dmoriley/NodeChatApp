@@ -16,14 +16,23 @@ var io = socketio(server); //this returns our websocket server
 app.use(express.static(publicPath));
 
 io.on('connection', (socket) => {
-    console.log('new user connection');
+    console.log('New user connection');
+
+    socket.emit('newMessage', {
+        from:"John",
+        text:"yourmom",
+        createdAt:123
+    });
+
+    socket.on('createMessage', (message) => {
+        console.log('newMessage', message);
+    });
 
     socket.on('disconnect',() => {
         console.log('User was disconnected');
-    })
+    });
 });
 
-io
 
 //changed from app.listen to server.listen
 server.listen(port, () => {
