@@ -27,7 +27,7 @@ io.on('connection', (socket) => {
 
         //socket.emit emits to one connection while io.emit emits to every connection on the server
         io.emit('newMessage', generateMessage(message.from,message.text));
-        callback('From the server');
+        callback();
         //brodcast sends to evey socket but itself
         // socket.broadcast.emit('newMessage', {
         //     from: message.from,
