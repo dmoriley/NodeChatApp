@@ -23,11 +23,11 @@ io.on('connection', (socket) => {
 
     socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
 
-    socket.on('createMessage', (message) => {
+    socket.on('createMessage', (message, callback) => {
 
         //socket.emit emits to one connection while io.emit emits to every connection on the server
         io.emit('newMessage', generateMessage(message.from,message.text));
-
+        callback('From the server');
         //brodcast sends to evey socket but itself
         // socket.broadcast.emit('newMessage', {
         //     from: message.from,
