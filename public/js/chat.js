@@ -24,7 +24,7 @@ socket.on('connect', function() {
             alert(error);
             window.location.href = '/';
         } else {
-            console.log('No param error');
+            // console.log('No param error');
         }
     });
 });
@@ -36,13 +36,27 @@ socket.on('disconnect', function() {
 //custom event to listen for
 socket.on('newMessage', function(message) { 
     var formattedTime = moment(message.createdAt).format('h:mm a');
-    var template = $('#message-template').html();
-    var html = Mustache.render(template,{
-        text: message.text,
-        from: message.from,
-        createdAt: formattedTime
-    });
-    $('#messages').append(html);
+
+    var lastMessage = $('#messages').children('li:last-child'),
+        lastUser = lastMessage.find('h4').text(),
+        lastTimeStamp = lastMessage.find('span').text();
+
+    if(moment(lastTimeStamp,'h:mm a').add(1.5,'minutes').valueOf() > moment(message.createdAt)
+        && lastUser === message.from) {
+        var p = $('<p></p>');
+        p.text(message.text);
+        lastMessage.children('.message__body').append(p);
+    } else {
+        var template = $('#message-template').html();
+        var html = Mustache.render(template,{
+            text: message.text,
+            from: message.from,
+            createdAt: formattedTime,
+            bgColour: message.colour
+        });
+        $('#messages').append(html);
+    }
+
     scrollToBottom();
     // var li = $('<li></li>');
     // li.text(`${message.from} ${formattedTime}: ${message.text}`);
@@ -50,14 +64,28 @@ socket.on('newMessage', function(message) {
 });
 
 socket.on('newLocationMessage', function(message) {
-    var formattedTime = moment(message.createdAt).format('h:mm a'),
-        template = $('#location-message-template').html(),
+    var formattedTime = moment(message.createdAt).format('h:mm a');
+
+    var lastMessage = $('#messages').children('li:last-child'),
+        lastUser = lastMessage.find('h4').text(),
+        lastTimeStamp = lastMessage.find('span').text();
+    
+    if(moment(lastTimeStamp,'h:mm a').add(1.5,'minutes').valueOf() > moment(message.createdAt)
+        && lastUser === message.from) {
+        var template = $('#location-anchor-template').html();
+        var p = Mustache.render(template, {url:message.url});
+        lastMessage.children('.message__body').append(p);
+    } else {
+        var template = $('#location-message-template').html(),
         html = Mustache.render(template, {
            url: message.url,
            from: message.from,
-           createdAt: formattedTime
+           createdAt: formattedTime,
+           bgColour: message.colour
         });
     $('#messages').append(html);
+    }
+
     scrollToBottom();
     // var li = $('<li></li>');
     // var a = $('<a target="_blank">My location</a>');

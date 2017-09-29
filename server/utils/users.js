@@ -4,8 +4,8 @@ class Users {
         this.users = [];
     }
 
-    addUser(id, name, room) {
-        var user = {id,name,room};
+    addUser(id, name, room, colour) {
+        var user = {id,name,room,colour};
         this.users.push(user);
         return user;
     }
@@ -21,6 +21,11 @@ class Users {
     getUser(id) {
         return this.users.filter((user) => user.id === id)[0];
     }
+
+    getUserByName(name) {
+        return this.users.filter((user) => user.name === name)[0];
+    }
+
 
     getUserList(room) {
         var users = this.users.filter((user) => user.room === room);

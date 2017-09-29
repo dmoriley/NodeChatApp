@@ -6,7 +6,7 @@ const socketio = require('socket.io');
 
 const {generateMessage, generateLocationMessage} = require('./utils/message');
 const {Users} = require('./utils/users');
-const {isRealString} = require('./utils/validation');
+const {isRealString,getRandomColour} = require('./utils/utils');
 const publicPath = path.join(__dirname, '../public')
 const port = process.env.PORT;
 
@@ -25,7 +25,7 @@ io.on('connection', (socket) => {
     socket.on('createMessage', (message, callback) => {
         var user = users.getUser(socket.id);
         if(user && isRealString(message.text)) {
-            io.to(user.room).emit('newMessage', generateMessage(user.name,message.text));
+            io.to(user.room).emit('newMessage', generateMessage(user.name,message.text,user.colour));
         }
 
         //socket.emit emits to one connection while io.emit emits to every connection on the server
@@ -42,18 +42,20 @@ io.on('connection', (socket) => {
     socket.on('createLocationMessage', (coords) => {
         var user = users.getUser(socket.id);
         if(user) {
-            io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
+            io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude,user.colour));
         }
     });
 
     socket.on('join', (params, callback) => {
         if(!isRealString(params.name) || !isRealString(params.room)) {
             return callback('Name and room name are required');
+        } else if(users.getUserByName(params.name)) {
+            return callback(`The name ${params.name} is already in use. Pick another one.`);
         };
 
         socket.join(params.room);
         users.removeUser(socket.id);
-        users.addUser(socket.id, params.name, params.room);
+        users.addUser(socket.id, params.name, params.room,getRandomColour());
 
         io.to(params.room).emit('updateUserList', users.getUserList(params.room));
         socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));

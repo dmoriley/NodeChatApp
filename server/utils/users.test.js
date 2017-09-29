@@ -63,4 +63,13 @@ describe('Users', () => {
     it('should not find user', () => {
         expect(users.getUser(55)).toBeFalsy();
     });
+
+    it('should find user by name', () => {
+        var user = users.users[0];
+        expect(users.getUserByName(user.name)).toEqual(user);
+    });
+
+    it('should not find user by name', () => {
+        expect(users.getUserByName("Jimmy")).toBeFalsy();
+    });
 })

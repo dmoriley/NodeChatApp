@@ -1,5 +1,5 @@
 const expect = require('expect');
-const {isRealString} = require('./validation');
+const {isRealString} = require('./utils');
 
 describe('isRealString', () => {
     it('should reject non-string values', () => {
