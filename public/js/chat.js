@@ -15,10 +15,26 @@ function scrollToBottom() {
   }
 }
 
-socket.on('connect', function () {
-  var params = $.deparam(window.location.search);
+function createNewMessage(messageData) {
+  var formattedTime = moment(messageData.createdAt).format('h:mm a');
+  var template = document.querySelector('#message-template').innerHTML;
+  const li = document.createElement('li');
+  li.className = 'message';
+  li.style.backgroundColor = messageData.colour;
+  var html = Mustache.render(template, {
+    text: messageData.text,
+    from: messageData.from,
+    createdAt: formattedTime,
+    bgColour: messageData.colour,
+  });
+  li.innerHTML = html;
+  return li;
+}
 
-  socket.emit('join', params, function (error) {
+socket.on('connect', function () {
+  var params = new URLSearchParams(window.location.search);
+
+  socket.emit('join', Object.fromEntries(params), function (error) {
     if (error) {
       alert(error);
       window.location.href = '/';
@@ -33,54 +49,55 @@ socket.on('disconnect', function () {
 
 //custom event to listen for
 socket.on('newMessage', function (message) {
-  var formattedTime = moment(message.createdAt).format('h:mm a');
+  var messages = document.querySelector('#messages');
 
-  var lastMessage = $('#messages').children('li:last-child'),
-    lastUser = lastMessage.find('h4').text(),
-    lastTimeStamp = lastMessage.find('span').text();
+  if (!(messages.children && messages.children.length > 0)) {
+    messages.appendChild(createNewMessage(message));
+    return;
+  }
 
+  var lastMessage = messages.querySelector('li:last-child');
+  var lastUser = lastMessage.querySelector('h4').innerText;
+  var lastTimeStamp = lastMessage.querySelector('span').innerText;
   if (
     moment(lastTimeStamp, 'h:mm a').add(1.5, 'minutes').valueOf() >
       moment(message.createdAt) &&
     lastUser === message.from
   ) {
-    var p = $('<p></p>');
-    p.text(message.text);
-    lastMessage.children('.message__body').append(p);
+    var p = document.createElement('p');
+    p.innerText = message.text;
+    lastMessage.querySelector('.message__body').appendChild(p);
   } else {
-    var template = $('#message-template').html();
-    var html = Mustache.render(template, {
-      text: message.text,
-      from: message.from,
-      createdAt: formattedTime,
-      bgColour: message.colour,
-    });
-    $('#messages').append(html);
+    messages.appendChild(createNewMessage(message));
   }
 
   scrollToBottom();
 });
 
 socket.on('updateUserList', function (users) {
-  var ol = $('<ol></ol>');
+  var ol = document.createElement('ol');
   users.forEach(function (user) {
-    ol.append($('<li></li>').text(user));
+    const li = document.createElement('li');
+    li.innerText = user;
+    ol.appendChild(li);
   });
-  $('#users').html(ol);
+  document.querySelector('#users').innerHTML = ol.outerHTML;
 });
 
-$('#message-form').on('submit', function (e) {
-  e.preventDefault();
+document
+  .querySelector('#message-form')
+  .addEventListener('submit', function (e) {
+    e.preventDefault();
 
-  var messageTextbox = $('[name=message]');
+    var messageTextbox = document.querySelector('[name=message]');
 
-  socket.emit(
-    'createMessage',
-    {
-      text: messageTextbox.val(),
-    },
-    function () {
-      messageTextbox.val('');
-    }
-  );
-});
+    socket.emit(
+      'createMessage',
+      {
+        text: messageTextbox.value,
+      },
+      function () {
+        messageTextbox.value = '';
+      }
+    );
+  });

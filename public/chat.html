@@ -35,6 +35,15 @@
     </div>
 
     <script id="message-template" type="text/template">
+      <div class="message__title">
+          <h4>{{from}}</h4>
+          <span>{{createdAt}}</span>
+      </div>
+      <div class="message__body">
+          <p>{{text}}</p>
+      </div>
+    </script>
+    <!-- <script id="message-template" type="text/template">
       <li class="message" style="background-color:{{bgColour}}">
               <div class="message__title">
                   <h4>{{from}}</h4>
@@ -44,14 +53,12 @@
                   <p>{{text}}</p>
               </div>
       </li>
-    </script>
+    </script> -->
 
     <script src="/socket.io/socket.io.js"></script>
     <!--Load socket io in the client side-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="/js/libs/moment.js"></script>
     <script src="/js/libs/mustache.js"></script>
-    <script src="/js/libs/deparam.js"></script>
     <script src="/js/chat.js"></script>
   </body>
 </html>
