@@ -65,35 +65,6 @@ socket.on('newMessage', function (message) {
   scrollToBottom();
 });
 
-socket.on('newLocationMessage', function (message) {
-  var formattedTime = moment(message.createdAt).format('h:mm a');
-
-  var lastMessage = $('#messages').children('li:last-child'),
-    lastUser = lastMessage.find('h4').text(),
-    lastTimeStamp = lastMessage.find('span').text();
-
-  if (
-    moment(lastTimeStamp, 'h:mm a').add(1.5, 'minutes').valueOf() >
-      moment(message.createdAt) &&
-    lastUser === message.from
-  ) {
-    var template = $('#location-anchor-template').html();
-    var p = Mustache.render(template, { url: message.url });
-    lastMessage.children('.message__body').append(p);
-  } else {
-    var template = $('#location-message-template').html(),
-      html = Mustache.render(template, {
-        url: message.url,
-        from: message.from,
-        createdAt: formattedTime,
-        bgColour: message.colour,
-      });
-    $('#messages').append(html);
-  }
-
-  scrollToBottom();
-});
-
 socket.on('updateUserList', function (users) {
   var ol = $('<ol></ol>');
   users.forEach(function (user) {
