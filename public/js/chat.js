@@ -1,21 +1,17 @@
 var socket = io(); //intiating the request to open and persist the socket
 
 function scrollToBottom() {
-  //selectors
-  var messages = $('#messages');
-  var newMessage = messages.children('li:last-child');
-  //heights
-  var clientHeight = messages.prop('clientHeight');
-  var scrollTop = messages.prop('scrollTop');
-  var scrollHeight = messages.prop('scrollHeight');
-  var newMessageHeight = newMessage.innerHeight();
-  var lastMessageHeight = newMessage.prev().innerHeight();
+  var messages = document.querySelector('#messages');
+  if (!messages.children) {
+    return;
+  }
 
-  if (
-    clientHeight + scrollTop + newMessageHeight + lastMessageHeight >=
-    scrollHeight
-  ) {
-    messages.scrollTop(scrollHeight);
+  // scroll height - scroll top should === clientHeight if at the bottom
+  var scrollPosition =
+    messages.scrollHeight - messages.scrollTop - messages.clientHeight;
+  // scrollPosition > 0 means its not at the bottom. Negative or 0 its fine
+  if (scrollPosition > 0) {
+    messages.scrollTop = messages.scrollHeight;
   }
 }
 
