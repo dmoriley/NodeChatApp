@@ -4,10 +4,10 @@ const path = require('path');
 const express = require('express');
 const socketio = require('socket.io');
 
-const { generateMessage, generateLocationMessage } = require('./utils/message');
+const { generateMessage } = require('./utils/message');
 const { Users } = require('./utils/users');
 const { isRealString, getRandomColour } = require('./utils/utils');
-const publicPath = path.join(__dirname, '../public');
+const publicPath = path.join(__dirname, '../client/public');
 const port = process.env.PORT;
 
 var app = express();
