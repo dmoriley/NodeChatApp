@@ -1,5 +1,5 @@
 // var socket = io(); //intiating the request to open and persist the socket
-const socket2 = new WebSocket('ws://localhost:3000');
+const socket = new WebSocket('ws://localhost:3000');
 
 function scrollToBottom() {
   var messages = document.querySelector('#messages');
@@ -16,7 +16,10 @@ function scrollToBottom() {
   }
 }
 
-function createNewMessage(messageData) {
+/** Create new message li html element
+ * @returns li html element
+ */
+function genNewLiMessageEl(messageData) {
   var formattedTime = moment(messageData.createdAt).format('h:mm a');
   var template = document.querySelector('#message-template').innerHTML;
   const li = document.createElement('li');
@@ -32,92 +35,79 @@ function createNewMessage(messageData) {
   return li;
 }
 
-socket2.onopen = (event) => {
-  console.log('established connection');
+/** Create new message el with supplied message and append to messages element */
+function newMessage({ message }) {
+  var messages = document.querySelector('#messages');
 
-  // socket2.send(
-  //   JSON.stringify({
-  //     type: 'hello from client',
-  //     content: [3, '4'],
-  //   })
-  // );
+  if (!(messages.children && messages.children.length > 0)) {
+    messages.appendChild(genNewLiMessageEl(message));
+    return;
+  }
+
+  var lastMessage = messages.querySelector('li:last-child');
+  var lastUser = lastMessage.querySelector('h4').innerText;
+  var lastTimeStamp = lastMessage.querySelector('span').innerText;
+  if (
+    moment(lastTimeStamp, 'h:mm a').add(1.5, 'minutes').valueOf() >
+      moment(message.createdAt) &&
+    lastUser === message.from
+  ) {
+    var p = document.createElement('p');
+    p.innerText = message.text;
+    lastMessage.querySelector('.message__body').appendChild(p);
+  } else {
+    messages.appendChild(genNewLiMessageEl(message));
+  }
+
+  scrollToBottom();
+}
+
+function updateUserList(content) {
+  const { users } = content;
+  var ol = document.createElement('ol');
+  users.forEach(function (user) {
+    const li = document.createElement('li');
+    li.innerText = user;
+    ol.appendChild(li);
+  });
+  document.querySelector('#users').innerHTML = ol.outerHTML;
+}
+
+socket.onopen = (event) => {
+  console.log('connection established');
+
   const searchParams = new URLSearchParams(window.location.search);
   const payload = JSON.stringify({
     type: 'join',
     content: {
       params: Object.fromEntries(searchParams),
-      // callback: function (error) {
-      //   if (error) {
-      //     alert(error);
-      //     window.location.href = '/';
-      //   }
-      // },
     },
   });
-  socket2.send(payload);
+  socket.send(payload);
 };
 
-// socket2.addEventListener('open', () => {
-//   console.log('connection established');
-//   // send a message to the server
-//   // socket.send(JSON.stringify({
-//   //   type: "hello from client",
-//   //   content: [ 3, "4" ]
-//   // }));
-// });
+socket.onclose = () => {
+  console.log('Disconnected from server');
+};
 
-// socket.on('connect', function () {
-//   var params = new URLSearchParams(window.location.search);
+socket.onmessage = (response) => {
+  const { type, content } = JSON.parse(response.data);
 
-//   socket.emit('join', Object.fromEntries(params), function (error) {
-//     if (error) {
-//       alert(error);
-//       window.location.href = '/';
-//     } else {
-//     }
-//   });
-// });
-
-// socket.on('disconnect', function () {
-//   console.log('Disconnected from server');
-// });
-
-// // custom event to listen for
-// socket.on('newMessage', function (message) {
-//   var messages = document.querySelector('#messages');
-
-//   if (!(messages.children && messages.children.length > 0)) {
-//     messages.appendChild(createNewMessage(message));
-//     return;
-//   }
-
-//   var lastMessage = messages.querySelector('li:last-child');
-//   var lastUser = lastMessage.querySelector('h4').innerText;
-//   var lastTimeStamp = lastMessage.querySelector('span').innerText;
-//   if (
-//     moment(lastTimeStamp, 'h:mm a').add(1.5, 'minutes').valueOf() >
-//       moment(message.createdAt) &&
-//     lastUser === message.from
-//   ) {
-//     var p = document.createElement('p');
-//     p.innerText = message.text;
-//     lastMessage.querySelector('.message__body').appendChild(p);
-//   } else {
-//     messages.appendChild(createNewMessage(message));
-//   }
-
-//   scrollToBottom();
-// });
-
-// socket.on('updateUserList', function (users) {
-//   var ol = document.createElement('ol');
-//   users.forEach(function (user) {
-//     const li = document.createElement('li');
-//     li.innerText = user;
-//     ol.appendChild(li);
-//   });
-//   document.querySelector('#users').innerHTML = ol.outerHTML;
-// });
+  switch (type) {
+    case 'newMessage':
+      newMessage(content);
+      break;
+    case 'updateUserList':
+      updateUserList(content);
+      break;
+    case 'info':
+      // not doing anything with this info at the moment
+      break;
+    default:
+      console.warn('Unknown type: ', type);
+      break;
+  }
+};
 
 document
   .querySelector('#message-form')
@@ -126,13 +116,14 @@ document
 
     var messageTextbox = document.querySelector('[name=message]');
 
-    socket.emit(
-      'createMessage',
-      {
-        text: messageTextbox.value,
+    const payload = JSON.stringify({
+      type: 'createMessage',
+      content: {
+        message: messageTextbox.value,
       },
-      function () {
-        messageTextbox.value = '';
-      }
-    );
+    });
+
+    socket.send(payload);
+    // TODO: maybe clear the text box on successful message creation
+    messageTextbox.value = '';
   });

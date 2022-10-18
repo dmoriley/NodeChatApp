@@ -5,14 +5,13 @@
   "main": "index.js",
   "scripts": {
     "start": "node server/server.js",
-    "ws": "nodemon server/server2.js"
+    "dev": "nodemon server/server.js"
   },
   "author": "David ORiley",
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.1",
     "moment": "^2.29.4",
-    "socket.io": "^3.1.2",
     "uid": "^2.0.1",
     "ws": "^8.9.0"
   },
