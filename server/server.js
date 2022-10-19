@@ -2,7 +2,6 @@ require('./config/config.js');
 const express = require('express');
 const WebSocketServer = require('ws');
 const { uid } = require('uid');
-const path = require('path');
 const { Users } = require('./utils/users');
 const { isRealString, getRandomColour } = require('./utils/utils');
 const { join: pathJoin } = require('path');

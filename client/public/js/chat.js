@@ -1,5 +1,6 @@
 // var socket = io(); //intiating the request to open and persist the socket
-const socket = new WebSocket('ws://localhost:3000');
+const protocol = window.location.protocol.includes('https') ? 'wss' : 'ws';
+const socket = new WebSocket(`${protocol}://${location.host}`);
 
 function scrollToBottom() {
   var messages = document.querySelector('#messages');
