@@ -101,6 +101,10 @@ socket.onmessage = (response) => {
     case 'updateUserList':
       updateUserList(content);
       break;
+    case 'error':
+      alert(content.message);
+      window.location.href = '/';
+      break;
     case 'info':
       // not doing anything with this info at the moment
       break;

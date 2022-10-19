@@ -63,12 +63,25 @@ function broadcastToRoom(room, obj) {
 function join(ws, content) {
   const { params } = content;
   if (!isRealString(params.name) || !isRealString(params.room)) {
-    // TODO: send error to to FE
-    console.warn('Name and room are required!');
+    ws.send(
+      JSON.stringify({
+        type: 'error',
+        content: {
+          message: 'Name and room are required',
+        },
+      })
+    );
     return;
   } else if (users.getUserByName(params.name)) {
     // TODO: send error to FE
-    console.warn(`Name ${params.name} already in use please pick another one`);
+    ws.send(
+      JSON.stringify({
+        type: 'error',
+        content: {
+          message: `Name ${params.name} is already in use please pick another one.`,
+        },
+      })
+    );
     return;
   }
 
@@ -77,7 +90,12 @@ function join(ws, content) {
     // create room if it doesn't exist
     createRoom(ws, room);
   } else if (rooms[room].length >= maxPerRoom) {
-    console.warn(`Room ${room} is full!`);
+    ws.send({
+      type: 'error',
+      content: {
+        message: `Room ${room} is full!`,
+      },
+    });
     return;
   } else {
     // room exists and theres room for another connection
