@@ -3,6 +3,7 @@ const express = require('express');
 const WebSocketServer = require('ws');
 const { uid } = require('uid');
 const { Users } = require('./utils/users');
+const { Rooms } = require('./utils/rooms');
 const { isRealString, getRandomColour } = require('./utils/utils');
 const { join: pathJoin } = require('path');
 const { generateMessage } = require('./utils/message');
@@ -16,49 +17,8 @@ const publicPath = pathJoin(__dirname, '../client/public');
 const wss = new WebSocketServer.Server({ noServer: true });
 
 const maxPerRoom = 4;
-// TODO: refactor to set
-let rooms = {};
 const users = new Users();
-
-function getWsRoomInfo(ws) {
-  // check if current ws has a room
-  if (ws['room'] === undefined) {
-    obj = {
-      type: 'info',
-      content: {
-        room: ws['room'],
-        noClients: rooms[ws['room']].length,
-      },
-    };
-  } else {
-    // websocket already has an associated room assigned
-    obj = {
-      type: 'info',
-      content: {
-        room: 'ws has room assigned',
-      },
-    };
-  }
-  return obj;
-}
-
-function createRoom(ws, room) {
-  // const room = genKey(5);
-  rooms[room] = [ws]; // add the websocket connection to the room
-  ws['room'] = room;
-}
-
-function closeRoom(room) {
-  if (rooms[room]) {
-    delete rooms[room];
-  }
-}
-
-function broadcastToRoom(room, obj) {
-  for (let connection of rooms[room]) {
-    connection.send(JSON.stringify(obj));
-  }
-}
+const rooms = new Rooms();
 
 function join(ws, content) {
   const { params } = content;
@@ -86,10 +46,10 @@ function join(ws, content) {
   }
 
   const room = params.room;
-  if (!Object.keys(rooms).includes(room)) {
+  if (!rooms.roomExist(room)) {
     // create room if it doesn't exist
-    createRoom(ws, room);
-  } else if (rooms[room].length >= maxPerRoom) {
+    rooms.createRoom(ws, room);
+  } else if (rooms.getRoomLength(room) >= maxPerRoom) {
     ws.send({
       type: 'error',
       content: {
@@ -99,10 +59,10 @@ function join(ws, content) {
     return;
   } else {
     // room exists and theres room for another connection
-    rooms[room].push(ws);
+    rooms.addConnectionToRoom(ws, room);
     ws['room'] = room;
   }
-  const info = getWsRoomInfo(ws);
+  const info = rooms.getWsRoomInfo(ws);
   ws.send(JSON.stringify(info));
 
   users.removeUser(ws.id);
@@ -117,14 +77,14 @@ function join(ws, content) {
     })
   );
 
-  broadcastToRoom(room, {
+  rooms.broadcastToRoom(room, {
     type: 'updateUserList',
     content: {
       users: users.getUserList(room),
     },
   });
 
-  broadcastToRoom(room, {
+  rooms.broadcastToRoom(room, {
     type: 'newMessage',
     content: {
       message: generateMessage('Admin', `${params.name} has joined.`),
@@ -138,25 +98,25 @@ function leave(ws) {
   }
 
   const room = ws.room;
-  rooms[room] = rooms[room].filter((so) => so !== ws);
+  rooms.removeConnectionFromRoom(ws, room);
   ws['room'] = undefined;
 
   const user = users.removeUser(ws.id);
-  if (user && rooms[room].length > 0) {
-    broadcastToRoom(room, {
+  if (user && rooms.getRoomLength(room) > 0) {
+    rooms.broadcastToRoom(room, {
       type: 'updateUserList',
       content: {
         users: users.getUserList(room),
       },
     });
-    broadcastToRoom(room, {
+    rooms.broadcastToRoom(room, {
       type: 'newMessage',
       content: {
         message: generateMessage('Admin', `${user.name} has left.`),
       },
     });
-  } else if (rooms[room].length === 0) {
-    closeRoom(room);
+  } else if (rooms.getRoomLength(room) === 0) {
+    rooms.closeRoom(room);
   }
 }
 
@@ -164,7 +124,7 @@ function createMessage(ws, content) {
   const { message } = content;
   const user = users.getUser(ws.id);
   if (user && isRealString(message)) {
-    broadcastToRoom(user.room, {
+    rooms.broadcastToRoom(user.room, {
       type: 'newMessage',
       content: {
         message: generateMessage(user.name, message, user.colour),
